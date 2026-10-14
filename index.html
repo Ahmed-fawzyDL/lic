@@ -42,9 +42,9 @@ button{border:0;border-radius:12px;padding:12px;font:inherit;font-weight:700;cur
 /* التطبيقات: لو عملت تطبيق جديد ضيفه هنا */
 const APPS={
   centric:['💰','Centric','https://centric-detech-solutions.pages.dev/'],
-  dana:['🎒','Dana','https://ahmed-fawzydl.github.io/dana/']
+  dana:['🎒','Dana','https://dana-detech-solutions.pages.dev/']
 };
-/* السيرفر اللي بيستقبل أوامر الإيقاف (رابط Centric على Cloudflare) */
+/* السيرفر اللي بيستقبل أوامر الإيقاف */
 const ADMIN='https://centric-detech-solutions.pages.dev';
 
 const DUR=[[30,'شهر'],[90,'3 شهور'],[180,'6 شهور'],[365,'سنة'],[0,'دايمة']];
@@ -61,7 +61,6 @@ function cp(t,m){navigator.clipboard.writeText(t).then(()=>msg(m||'اتنسخ �
 const store=()=>{try{return JSON.parse(localStorage.getItem(KK)||'null')}catch(e){return null}};
 const list=()=>{try{return JSON.parse(localStorage.getItem(KL)||'[]')}catch(e){return[]}};
 const saveList=l=>localStorage.setItem(KL,JSON.stringify(l));
-function myDev(){let d=localStorage.getItem('ah-dev');if(!d){const a='ABCDEFGHJKLMNPQRSTUVWXYZ23456789',r=crypto.getRandomValues(new Uint8Array(8));d=[...r].map(x=>a[x%32]).join('');d=d.slice(0,4)+'-'+d.slice(4);localStorage.setItem('ah-dev',d)}return d}
 async function aesKey(pin,salt){const k=await crypto.subtle.importKey('raw',te.encode(pin),'PBKDF2',false,['deriveKey']);return crypto.subtle.deriveKey({name:'PBKDF2',salt,iterations:200000,hash:'SHA-256'},k,{name:'AES-GCM',length:256},false,['encrypt','decrypt'])}
 function view(h){$('#app').innerHTML=h;scrollTo(0,0)}
 function start(){if(!store())return vSetup();if(!PRIV)return vUnlock();vHome()}
@@ -142,33 +141,4 @@ async function issue(){
 const links=x=>(x.a==='*'?Object.keys(APPS):[x.a]).filter(k=>APPS[k]).map(k=>[APPS[k][1],APPS[k][2]+'?lic='+x.code]);
 function share(id){
   const x=list().find(y=>y.id===id);if(!x)return;
-  const t=`أهلاً ${x.n||''} 👋\nدي رخصة التفعيل${x.e?' لحد '+fdt(x.e):''}:\n\n`+links(x).map(([n,u])=>`${n}:\n${u}`).join('\n\n')+`\n\nافتح الرابط من نفس الموبايل والتطبيق هيتفعّل لوحده.\nعلى الآيفون: انسخ الرابط والصقه في شاشة التفعيل جوه التطبيق.`;
-  open('https://wa.me/?text='+encodeURIComponent(t),'_blank');
-}
-function renew(id){const x=list().find(y=>y.id===id);if(!x)return;$('#n').value=x.n;$('#d').value=x.d;const b=document.querySelector(`#ap .chip[data-v="${x.a}"]`);if(b)pick(b);scrollTo({top:0,behavior:'smooth'});msg('اختار المدة ودوس اعمل الرخصة')}
-function del(id){if(!confirm('تشيلها من القايمة؟ (الرخصة نفسها هتفضل شغالة لحد ما تخلص أو توقفها)'))return;saveList(list().filter(x=>x.id!==id));vHome()}
-
-/* ===== الإيقاف ===== */
-function stopDev(d){$('#rvd').value=d;$('#rvd').scrollIntoView({behavior:'smooth',block:'center'});msg('دوس ⛔ إيقاف عشان توقفه')}
-async function adminAct(act){
-  const d=$('#rvd').value.trim().toUpperCase();
-  if(!/^[A-Z0-9]{4}-[A-Z0-9]{4}$/.test(d))return msg('رقم الجهاز شكله XXXX-XXXX');
-  if(act==='rv'&&!confirm('توقف الجهاز '+d+'؟'))return;
-  const p=enc(te.encode([act,d,Date.now()].join('|'))),s=await crypto.subtle.sign({name:'ECDSA',hash:'SHA-256'},PRIV,te.encode(p));
-  try{
-    const r=await fetch(ADMIN+'/__lic/admin',{method:'POST',headers:{'content-type':'text/plain'},body:p+'.'+enc(s)});
-    const j=await r.json();
-    if(!j.ok)return msg('ما نفعش: '+(j.err||r.status));
-    const l=list();l.forEach(x=>{if(x.d===d)x.rv=act==='rv'});saveList(l);vHome();
-    msg(act==='rv'?'⛔ اتوقف':'✅ رجع يشتغل');
-  }catch(e){msg('مفيش نت أو السيرفر مش بيرد')}
-}
-
-/* ===== النسخة الاحتياطية ===== */
-function bk(){const b=new Blob([JSON.stringify({ahm:1,key:store(),list:list(),at:new Date().toISOString()})],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='ah-license-backup-'+new Date().toISOString().slice(0,10)+'.json';a.click();msg('اتنزلت ✓')}
-function pickBk(){const i=document.createElement('input');i.type='file';i.accept='.json,application/json';i.onchange=()=>{const f=i.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{const j=JSON.parse(r.result);if(!j.ahm||!j.key)throw 0;if(store()&&!confirm('هتستبدل المفتاح والرخص اللي هنا. متأكد؟'))return;localStorage.setItem(KK,JSON.stringify(j.key));saveList(j.list||[]);PRIV=null;start();msg('اترجعت ✓ اكتب الرقم السري')}catch(e){msg('الملف ده مش نسخة رخص')}};r.readAsText(f)};i.click()}
-
-start();
-</script>
-</body>
-</html>
+  const t=`أهلاً ${x.n||''} 👋\nدي رخصة التفعيل${x.e?' لحد
